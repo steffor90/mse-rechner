@@ -137,6 +137,11 @@
     </div>
     
     <div class="input-group">
+        <label for="vorhandene_pakete">Vorhandene Pakete:</label>
+        <input type="text" id="vorhandene_pakete" value="0" oninput="calculate()" placeholder="Anzahl bereits vorhandener Pakete">
+    </div>
+    
+    <div class="input-group">
         <label for="metall">Kosten Metall:</label>
         <input type="text" id="metall" value="0" oninput="calculate()">
     </div>
@@ -189,6 +194,10 @@
         <div class="result-item">
             <span class="result-label">Benötigte Pakete:</span>
             <span class="result-value" id="pakete">0</span>
+        </div>
+        <div class="result-item" id="verbleibende_row" style="display: none;">
+            <span class="result-label">Verbleibende Pakete:</span>
+            <span class="result-value" id="verbleibende_pakete" style="color: #ffd700;">0</span>
         </div>
         <div class="result-item">
             <span class="result-label">Kosten DM á 42.000 pro Paket:</span>
@@ -321,6 +330,7 @@
         const kristall = parseFloat(document.getElementById('kristall').value.replace(/\./g, '')) || 0;
         const deuterium = parseFloat(document.getElementById('deuterium').value.replace(/\./g, '')) || 0;
         const tagesproduktion = parseFloat(document.getElementById('tagesproduktion').value.replace(/\./g, '')) || 0;
+        const vorhandenePakete = parseFloat(document.getElementById('vorhandene_pakete').value.replace(/\./g, '')) || 0;
         
         const vorhandenMetall = parseFloat(document.getElementById('vorhanden_metall').value.replace(/\./g, '')) || 0;
         const vorhandenKristall = parseFloat(document.getElementById('vorhanden_kristall').value.replace(/\./g, '')) || 0;
@@ -336,8 +346,12 @@
         // Benötigte Pakete (1 Paket = Tagesproduktion)
         const benoetigtePakete = tagesproduktion > 0 ? Math.ceil(fehlendeMSE / tagesproduktion) : 0;
         
-        // Kosten in Dunkler Materie (42.000 DM pro Paket)
-        const dmKosten = benoetigtePakete * 42000;
+        // Verbleibende Pakete berechnen
+        const verbleibendePakete = vorhandenePakete - benoetigtePakete;
+        
+        // Kosten in Dunkler Materie (42.000 DM pro Paket) - nur für tatsächlich zu kaufende Pakete
+        const zuKaufendePakete = Math.max(0, benoetigtePakete - vorhandenePakete);
+        const dmKosten = zuKaufendePakete * 42000;
         
         // Kosten in Euro (100€ = 5.050.000 DM)
         const euroKosten = dmKosten / 5050000 * 100;
@@ -349,6 +363,15 @@
         document.getElementById('pakete').textContent = benoetigtePakete.toLocaleString('de-DE');
         document.getElementById('dm_kosten').textContent = dmKosten.toLocaleString('de-DE');
         document.getElementById('euro_kosten').textContent = euroKosten.toLocaleString('de-DE', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' €';
+        
+        // Verbleibende Pakete anzeigen, wenn vorhandene Pakete >= benötigte Pakete
+        const verbleibendeRow = document.getElementById('verbleibende_row');
+        if (vorhandenePakete > 0 && verbleibendePakete >= 0) {
+            verbleibendeRow.style.display = 'flex';
+            document.getElementById('verbleibende_pakete').textContent = verbleibendePakete.toLocaleString('de-DE');
+        } else {
+            verbleibendeRow.style.display = 'none';
+        }
     }
     
     // Initial berechnen
@@ -366,6 +389,7 @@
         document.getElementById('vorhanden_metall').value = '0';
         document.getElementById('vorhanden_kristall').value = '0';
         document.getElementById('vorhanden_deuterium').value = '0';
+        document.getElementById('vorhandene_pakete').value = '0';
         
         // Tagesproduktion bleibt erhalten (wird normalerweise nicht geändert)
         // Wenn du auch die Tagesproduktion zurücksetzen möchtest, entferne die Kommentare:
