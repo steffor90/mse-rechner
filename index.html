@@ -79,6 +79,47 @@
             font-size: 14px;
             color: #ffeb3b;
         }
+        .button-container {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+            justify-content: center;
+        }
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+        }
+        .btn-reset {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+            color: white;
+        }
+        .btn-copy {
+            background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+            color: white;
+        }
+        .copy-notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #27ae60;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            display: none;
+            z-index: 1000;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
@@ -113,6 +154,11 @@
     <h2 style="margin-top: 30px; margin-bottom: 15px; text-align: center; color: #ffd700;">Vorhandene Ressourcen</h2>
     
     <div class="input-group">
+        <label for="paste_vorhanden">📋 Vorhandene Ressourcen einfügen:</label>
+        <textarea id="paste_vorhanden" rows="6" style="width: 100%; padding: 10px; border: 2px solid rgba(255, 255, 255, 0.3); border-radius: 5px; font-size: 14px; background: rgba(255, 255, 255, 0.9); box-sizing: border-box; font-family: monospace;" oninput="parseVorhandeneText()" placeholder="Entweder bei AGR-Account-Vorhandene Ressourcen rauskopieren oder manuell unten eintragen"></textarea>
+    </div>
+    
+    <div class="input-group">
         <label for="vorhanden_metall">Vorhandenes Metall:</label>
         <input type="text" id="vorhanden_metall" value="0" oninput="calculate()">
     </div>
@@ -145,16 +191,12 @@
             <span class="result-value" id="pakete">0</span>
         </div>
         <div class="result-item">
-            <span class="result-label">Kosten Dunkle Materie (à 42.000 DM):</span>
+            <span class="result-label">Kosten DM á 42.000 pro Paket:</span>
             <span class="result-value" id="dm_kosten">0</span>
         </div>
         <div class="result-item">
             <span class="result-label">Kosten in Euro (100€ = 5.050.000 DM):</span>
             <span class="result-value" id="euro_kosten">0,00 €</span>
-        </div>
-        <div class="result-item">
-            <span class="result-label">Produktionsdauer (Tage):</span>
-            <span class="result-value" id="tage">0</span>
         </div>
     </div>
     
@@ -162,7 +204,14 @@
         Tauschkurs: Metall:Kristall:Deuterium = 3:2:1<br>
         Umrechnung: Metall × 1 + Kristall × 1,5 + Deuterium × 3
     </div>
+    
+    <div class="button-container">
+        <button class="btn btn-reset" onclick="resetAll()">🔄 Alles zurücksetzen</button>
+        <button class="btn btn-copy" onclick="copyResults()">📋 Ergebnisse kopieren</button>
+    </div>
 </div>
+
+<div class="copy-notification" id="copyNotification">✓ In Zwischenablage kopiert!</div>
 
 <script>
     function parseText() {
@@ -216,6 +265,56 @@
         calculate();
     }
     
+    function parseVorhandeneText() {
+        const text = document.getElementById('paste_vorhanden').value;
+        
+        // Flexiblere Regex-Patterns für alle möglichen Formate
+        const metallMatches = text.matchAll(/Metall\s*:?\s*([\d.]+)/gi);
+        const kristallMatches = text.matchAll(/Kristall\s*:?\s*([\d.]+)/gi);
+        const deuteriumMatches = text.matchAll(/Deuterium\s*:?\s*([\d.]+)/gi);
+        
+        let totalMetall = 0;
+        let totalKristall = 0;
+        let totalDeuterium = 0;
+        
+        // Summiere alle Metall-Werte
+        for (const match of metallMatches) {
+            const value = match[1];
+            if (value) {
+                totalMetall += parseFloat(value.replace(/\./g, '')) || 0;
+            }
+        }
+        
+        // Summiere alle Kristall-Werte
+        for (const match of kristallMatches) {
+            const value = match[1];
+            if (value) {
+                totalKristall += parseFloat(value.replace(/\./g, '')) || 0;
+            }
+        }
+        
+        // Summiere alle Deuterium-Werte
+        for (const match of deuteriumMatches) {
+            const value = match[1];
+            if (value) {
+                totalDeuterium += parseFloat(value.replace(/\./g, '')) || 0;
+            }
+        }
+        
+        // Setze die summierten Werte
+        if (totalMetall > 0) {
+            document.getElementById('vorhanden_metall').value = totalMetall.toLocaleString('de-DE');
+        }
+        if (totalKristall > 0) {
+            document.getElementById('vorhanden_kristall').value = totalKristall.toLocaleString('de-DE');
+        }
+        if (totalDeuterium > 0) {
+            document.getElementById('vorhanden_deuterium').value = totalDeuterium.toLocaleString('de-DE');
+        }
+        
+        calculate();
+    }
+    
     function calculate() {
         // Punkte aus den Eingaben entfernen
         const metall = parseFloat(document.getElementById('metall').value.replace(/\./g, '')) || 0;
@@ -243,9 +342,6 @@
         // Kosten in Euro (100€ = 5.050.000 DM)
         const euroKosten = dmKosten / 5050000 * 100;
         
-        // Produktionsdauer
-        const tage = tagesproduktion > 0 ? fehlendeMSE / tagesproduktion : 0;
-        
         // Ergebnisse anzeigen
         document.getElementById('gesamtkosten').textContent = gesamtkosten.toLocaleString('de-DE', {maximumFractionDigits: 0});
         document.getElementById('vorhanden_mse').textContent = vorhandenMSE.toLocaleString('de-DE', {maximumFractionDigits: 0});
@@ -253,11 +349,58 @@
         document.getElementById('pakete').textContent = benoetigtePakete.toLocaleString('de-DE');
         document.getElementById('dm_kosten').textContent = dmKosten.toLocaleString('de-DE');
         document.getElementById('euro_kosten').textContent = euroKosten.toLocaleString('de-DE', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' €';
-        document.getElementById('tage').textContent = tage.toLocaleString('de-DE', {maximumFractionDigits: 2});
     }
     
     // Initial berechnen
     calculate();
+    
+    function resetAll() {
+        // Textfelder leeren
+        document.getElementById('paste_text').value = '';
+        document.getElementById('paste_vorhanden').value = '';
+        
+        // Alle Eingabefelder auf 0 setzen
+        document.getElementById('metall').value = '0';
+        document.getElementById('kristall').value = '0';
+        document.getElementById('deuterium').value = '0';
+        document.getElementById('vorhanden_metall').value = '0';
+        document.getElementById('vorhanden_kristall').value = '0';
+        document.getElementById('vorhanden_deuterium').value = '0';
+        
+        // Tagesproduktion bleibt erhalten (wird normalerweise nicht geändert)
+        // Wenn du auch die Tagesproduktion zurücksetzen möchtest, entferne die Kommentare:
+        // document.getElementById('tagesproduktion').value = '0';
+        
+        // Neu berechnen
+        calculate();
+    }
+    
+    function copyResults() {
+        const pakete = document.getElementById('pakete').textContent;
+        const dmKosten = document.getElementById('dm_kosten').textContent;
+        const euroKosten = document.getElementById('euro_kosten').textContent;
+        const fehlendeMSE = document.getElementById('fehlende_mse').textContent;
+        
+        const text = `📊 OGame MSE Rechner - Ergebnisse:
+━━━━━━━━━━━━━━━━━━━━━━
+Fehlende MSE: ${fehlendeMSE}
+Benötigte Pakete: ${pakete}
+Kosten DM: ${dmKosten}
+Kosten Euro: ${euroKosten}`;
+        
+        navigator.clipboard.writeText(text).then(() => {
+            // Notification anzeigen
+            const notification = document.getElementById('copyNotification');
+            notification.style.display = 'block';
+            
+            // Nach 2 Sekunden ausblenden
+            setTimeout(() => {
+                notification.style.display = 'none';
+            }, 2000);
+        }).catch(err => {
+            alert('Fehler beim Kopieren. Bitte manuell kopieren.');
+        });
+    }
 </script>
 </body>
 </html>
