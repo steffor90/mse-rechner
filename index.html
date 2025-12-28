@@ -83,10 +83,10 @@
 </head>
 <body>
     <div class="container">
-        <h1>🚀 OGame MSE Rechner</h1>
+        <h1>ð OGame MSE Rechner</h1>
 
     <div class="input-group">
-        <label for="paste_text">📋 Text aus OGame einfügen:</label>
+        <label for="paste_text">ð Text aus OGame einfÃ¼gen:</label>
         <textarea id="paste_text" rows="6" style="width: 100%; padding: 10px; border: 2px solid rgba(255, 255, 255, 0.3); border-radius: 5px; font-size: 14px; background: rgba(255, 255, 255, 0.9); box-sizing: border-box; font-family: monospace;" oninput="parseText()" placeholder="Kopiere hier den Text aus OGame rein..."></textarea>
     </div>
 
@@ -141,12 +141,16 @@
             <span class="result-value" id="fehlende_mse">0</span>
         </div>
         <div class="result-item">
-            <span class="result-label">Benötigte Pakete:</span>
+            <span class="result-label">BenÃ¶tigte Pakete:</span>
             <span class="result-value" id="pakete">0</span>
         </div>
         <div class="result-item">
-            <span class="result-label">Kosten Dunkle Materie (à 42.000 DM):</span>
+            <span class="result-label">Kosten Dunkle Materie (Ã  42.000 DM):</span>
             <span class="result-value" id="dm_kosten">0</span>
+        </div>
+        <div class="result-item">
+            <span class="result-label">Kosten in Euro (100â¬ = 5.050.000 DM):</span>
+            <span class="result-value" id="euro_kosten">0,00 â¬</span>
         </div>
         <div class="result-item">
             <span class="result-label">Produktionsdauer (Tage):</span>
@@ -156,7 +160,7 @@
     
     <div class="info-text">
         Tauschkurs: Metall:Kristall:Deuterium = 3:2:1<br>
-        Umrechnung: Metall × 1 + Kristall × 1,5 + Deuterium × 3
+        Umrechnung: Metall Ã 1 + Kristall Ã 1,5 + Deuterium Ã 3
     </div>
 </div>
 
@@ -164,10 +168,11 @@
     function parseText() {
         const text = document.getElementById('paste_text').value;
         
-        // Suche nach allen Vorkommen von Metall, Kristall und Deuterium
-        const metallMatches = text.matchAll(/\*\*Metall:\*\*\s*([\d.]+)|Metall:\s*([\d.]+)/gi);
-        const kristallMatches = text.matchAll(/\*\*Kristall:\*\*\s*([\d.]+)|Kristall:\s*([\d.]+)/gi);
-        const deuteriumMatches = text.matchAll(/\*\*Deuterium:\*\*\s*([\d.]+)|Deuterium:\s*([\d.]+)/gi);
+        // Flexiblere Regex-Patterns fÃ¼r alle mÃ¶glichen Formate
+        // Findet: "Metall 1250", "Metall:1250", "Metall1250", "**Metall:** 1250", etc.
+        const metallMatches = text.matchAll(/Metall\s*:?\s*([\d.]+)/gi);
+        const kristallMatches = text.matchAll(/Kristall\s*:?\s*([\d.]+)/gi);
+        const deuteriumMatches = text.matchAll(/Deuterium\s*:?\s*([\d.]+)/gi);
         
         let totalMetall = 0;
         let totalKristall = 0;
@@ -175,7 +180,7 @@
         
         // Summiere alle Metall-Werte
         for (const match of metallMatches) {
-            const value = match[1] || match[2];
+            const value = match[1];
             if (value) {
                 totalMetall += parseFloat(value.replace(/\./g, '')) || 0;
             }
@@ -183,7 +188,7 @@
         
         // Summiere alle Kristall-Werte
         for (const match of kristallMatches) {
-            const value = match[1] || match[2];
+            const value = match[1];
             if (value) {
                 totalKristall += parseFloat(value.replace(/\./g, '')) || 0;
             }
@@ -191,7 +196,7 @@
         
         // Summiere alle Deuterium-Werte
         for (const match of deuteriumMatches) {
-            const value = match[1] || match[2];
+            const value = match[1];
             if (value) {
                 totalDeuterium += parseFloat(value.replace(/\./g, '')) || 0;
             }
@@ -222,18 +227,21 @@
         const vorhandenKristall = parseFloat(document.getElementById('vorhanden_kristall').value.replace(/\./g, '')) || 0;
         const vorhandenDeuterium = parseFloat(document.getElementById('vorhanden_deuterium').value.replace(/\./g, '')) || 0;
         
-        // Umrechnung in MSE (Metall × 1 + Kristall × 1,5 + Deuterium × 3)
+        // Umrechnung in MSE (Metall Ã 1 + Kristall Ã 1,5 + Deuterium Ã 3)
         const gesamtkosten = (metall * 1) + (kristall * 1.5) + (deuterium * 3);
         const vorhandenMSE = (vorhandenMetall * 1) + (vorhandenKristall * 1.5) + (vorhandenDeuterium * 3);
         
         // Fehlende MSE berechnen
         const fehlendeMSE = Math.max(0, gesamtkosten - vorhandenMSE);
         
-        // Benötigte Pakete (1 Paket = Tagesproduktion)
+        // BenÃ¶tigte Pakete (1 Paket = Tagesproduktion)
         const benoetigtePakete = tagesproduktion > 0 ? Math.ceil(fehlendeMSE / tagesproduktion) : 0;
         
         // Kosten in Dunkler Materie (42.000 DM pro Paket)
         const dmKosten = benoetigtePakete * 42000;
+        
+        // Kosten in Euro (100â¬ = 5.050.000 DM)
+        const euroKosten = dmKosten / 5050000 * 100;
         
         // Produktionsdauer
         const tage = tagesproduktion > 0 ? fehlendeMSE / tagesproduktion : 0;
@@ -244,6 +252,7 @@
         document.getElementById('fehlende_mse').textContent = fehlendeMSE.toLocaleString('de-DE', {maximumFractionDigits: 0});
         document.getElementById('pakete').textContent = benoetigtePakete.toLocaleString('de-DE');
         document.getElementById('dm_kosten').textContent = dmKosten.toLocaleString('de-DE');
+        document.getElementById('euro_kosten').textContent = euroKosten.toLocaleString('de-DE', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' â¬';
         document.getElementById('tage').textContent = tage.toLocaleString('de-DE', {maximumFractionDigits: 2});
     }
     
