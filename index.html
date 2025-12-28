@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OGame MSE Rechner</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: #fff;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 30px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+        .input-group {
+            margin-bottom: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px;
+            border-radius: 8px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #ffd700;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 5px;
+            font-size: 16px;
+            background: rgba(255, 255, 255, 0.9);
+            box-sizing: border-box;
+        }
+        input[type="text"] {
+            font-family: monospace;
+        }
+        .result-box {
+            background: rgba(0, 255, 0, 0.1);
+            border: 2px solid #00ff00;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 30px;
+        }
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .result-item:last-child {
+            border-bottom: none;
+        }
+        .result-label {
+            font-weight: bold;
+        }
+        .result-value {
+            color: #00ff00;
+            font-weight: bold;
+            font-size: 18px;
+        }
+        .info-text {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 14px;
+            color: #ffeb3b;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 OGame MSE Rechner</h1>
+
+```
+    <div class="input-group">
+        <label for="paste_text">📋 Text aus OGame einfügen:</label>
+        <textarea id="paste_text" rows="6" style="width: 100%; padding: 10px; border: 2px solid rgba(255, 255, 255, 0.3); border-radius: 5px; font-size: 14px; background: rgba(255, 255, 255, 0.9); box-sizing: border-box; font-family: monospace;" oninput="parseText()" placeholder="Kopiere hier den Text aus OGame rein..."></textarea>
+    </div>
+    
+    <div class="input-group">
+        <label for="metall">Kosten Metall:</label>
+        <input type="text" id="metall" value="0" oninput="calculate()">
+    </div>
+    
+    <div class="input-group">
+        <label for="kristall">Kosten Kristall:</label>
+        <input type="text" id="kristall" value="0" oninput="calculate()">
+    </div>
+    
+    <div class="input-group">
+        <label for="deuterium">Kosten Deuterium:</label>
+        <input type="text" id="deuterium" value="0" oninput="calculate()">
+    </div>
+    
+    <div class="input-group">
+        <label for="tagesproduktion">Meine Tagesproduktion Metall:</label>
+        <input type="text" id="tagesproduktion" value="0" oninput="calculate()">
+    </div>
+    
+    <div class="result-box">
+        <div class="result-item">
+            <span class="result-label">Gesamtkosten in MSE:</span>
+            <span class="result-value" id="gesamtkosten">0</span>
+        </div>
+        <div class="result-item">
+            <span class="result-label">Produktionsdauer (Tage):</span>
+            <span class="result-value" id="tage">0</span>
+        </div>
+    </div>
+    
+    <div class="info-text">
+        Tauschkurs: Metall:Kristall:Deuterium = 3:2:1<br>
+        Umrechnung: Metall × 1 + Kristall × 1,5 + Deuterium × 3
+    </div>
+</div>
+
+<script>
+    function parseText() {
+        const text = document.getElementById('paste_text').value;
+        
+        // Suche nach Metall, Kristall und Deuterium
+        const metallMatch = text.match(/\*\*Metall:\*\*\s*([\d.]+)/i) || text.match(/Metall:\s*([\d.]+)/i);
+        const kristallMatch = text.match(/\*\*Kristall:\*\*\s*([\d.]+)/i) || text.match(/Kristall:\s*([\d.]+)/i);
+        const deuteriumMatch = text.match(/\*\*Deuterium:\*\*\s*([\d.]+)/i) || text.match(/Deuterium:\s*([\d.]+)/i);
+        
+        if (metallMatch) {
+            document.getElementById('metall').value = metallMatch[1];
+        }
+        if (kristallMatch) {
+            document.getElementById('kristall').value = kristallMatch[1];
+        }
+        if (deuteriumMatch) {
+            document.getElementById('deuterium').value = deuteriumMatch[1];
+        }
+        
+        calculate();
+    }
+    
+    function calculate() {
+        // Punkte aus den Eingaben entfernen
+        const metall = parseFloat(document.getElementById('metall').value.replace(/\./g, '')) || 0;
+        const kristall = parseFloat(document.getElementById('kristall').value.replace(/\./g, '')) || 0;
+        const deuterium = parseFloat(document.getElementById('deuterium').value.replace(/\./g, '')) || 0;
+        const tagesproduktion = parseFloat(document.getElementById('tagesproduktion').value.replace(/\./g, '')) || 0;
+        
+        // Umrechnung in MSE (Metall × 1 + Kristall × 1,5 + Deuterium × 3)
+        const gesamtkosten = (metall * 1) + (kristall * 1.5) + (deuterium * 3);
+        
+        // Produktionsdauer
+        const tage = tagesproduktion > 0 ? gesamtkosten / tagesproduktion : 0;
+        
+        // Ergebnisse anzeigen
+        document.getElementById('gesamtkosten').textContent = gesamtkosten.toLocaleString('de-DE', {maximumFractionDigits: 0});
+        document.getElementById('tage').textContent = tage.toLocaleString('de-DE', {maximumFractionDigits: 2});
+    }
+    
+    // Initial berechnen
+    calculate();
+</script>
+```
+
+</body>
+</html>
